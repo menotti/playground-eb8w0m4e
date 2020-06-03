@@ -1,12 +1,12 @@
-# SYCL Memory and Synchronization: Read Hardware Information
+# Memória e sincronização SYCL: lendo informações do hardware
 
 `size_t wgroup_size = 32;`
 
-We set the Work Group size that will be used. This is manually set as 32 which will work on all devices but it's important if you are optimizing for specific hardware to understand how to calculate the optimal work group size.
+Definimos o tamanho do grupo de trabalho que será usado. Isso é definido manualmente como 32, que funcionará em todos os dispositivos, mas é importante entender como calcular o tamanho ideal do grupo de trabalho se você estiver otimizando para um hardware específico.
 
 `auto part_size = wgroup_size * 2;`
 
-We initialize a part_size variable to be the number of elements in the array that work-group reduces. Since each work-item initially reduces two elements, it is twice the work-group size.
+Inicializamos uma variável `part_size` para ser o número de elementos na matriz que o grupo de trabalho reduz. Como cada item de trabalho reduz inicialmente dois elementos, é duas vezes o tamanho do grupo de trabalho.
 
 ```
 if (!has_local_mem
@@ -16,6 +16,6 @@ if (!has_local_mem
   }
 ```
 
-We also test the device for the local memory size - we cannot perform the reduction if there is too little of it or if local memory is unsupported altogether. Of course, in a real-world application a special case would have to be made to also support such devices.
+Também testamos o dispositivo quanto ao tamanho da memória local - não podemos realizar a redução se houver muito pouco ou se a memória local não for totalmente suportada. Obviamente, em um aplicativo do mundo real, seria necessário um caso especial para também suportar esses dispositivos.
 
-@[Parallel Reduction]({"stubs": ["src/exercises/memory_2.cpp"],"command": "sh /project/target/run.sh memory_2", "layout": "aside"})
+@[Redução paralela]({"stubs": ["src/exercises/memory_2.cpp"],"command": "sh /project/target/run.sh memory_2", "layout": "aside"})

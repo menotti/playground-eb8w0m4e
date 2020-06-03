@@ -1,22 +1,22 @@
-# SYCL Memory and Synchronization
+# Memória e sincronização SYCL
 
-While for simple computations it is okay to operate purely on work-items, any more complex workload will require finer-grained control. Unfortunately, this comes at the cost of introducing some complexity. Hopefully though, we can clear everything up!
+Enquanto para cálculos simples não há problema em operar apenas em itens de trabalho, qualquer carga de trabalho mais complexa exigirá controle mais refinado. Infelizmente, isso tem o custo de introduzir alguma complexidade. Felizmente, podemos esclarecer tudo!
 
-You might remember that work-items are grouped into work-groups. The splitting into work-groups is not purely conceptual - it has very real implications on memory accesses and performance. Work-groups are independent of each other. In fact, there is no way to synchronize between them in a single kernel. For this reason, two work-groups should never write to the same memory location (although they can read shared data).
+Você deve se lembrar que os itens de trabalho são agrupados em grupos de trabalho. A divisão em grupos de trabalho não é puramente conceitual - tem implicações muito reais nos acessos e desempenho da memória. Os grupos de trabalho são independentes um do outro. De fato, não há como sincronizar entre eles em um único _kernel_. Por esse motivo, dois grupos de trabalho nunca devem gravar no mesmo local de memória (embora possam ler dados compartilhados).
 
-OpenCL and SYCL define a clear distinction between various regions in memory and rules that govern accesses to these. Everything on the CPU side is known as host memory. It is not directly accessible from kernels, but as we've seen, buffers and accessors provide facilities for copying host data to the device and accessing it there. The corresponding accessor target is access::target::host_buffer.
+OpenCL e SYCL definem uma distinção clara entre várias regiões na memória e regras que governam os acessos a elas. Tudo no lado da CPU é conhecido como memória do _host_. Não é acessível diretamente a partir dos _kernels_, mas, como vimos, _buffers_ e acessadores fornecem recursos para copiar dados do _host_ para o dispositivo e acessá-los lá. O destino do acessador correspondente é `access::target::host_buffer`.
 
-On the device side, more memory regions exist:
+No lado do dispositivo, existem mais regiões de memória:
 
- * Global memory is available in the same form to all work-groups and items. It can be thought of as a device-side equivalent of RAM. The corresponding target, access::target::global_buffer, is the default target for buffer::get_access. In previous examples we didn't explicitly specify a target, so this one was used.
+* A memória global está disponível da mesma forma para todos os grupos de trabalho e itens. Pode ser considerado um equivalente de RAM do lado do dispositivo. O destino correspondente, `access::target::global_buffer`, é o destino padrão para `buffer::get_access`. Nos exemplos anteriores, não especificamos explicitamente um destino, portanto este foi usado.
 
- * Local memory is specific to a single work-group. Work-groups cannot access others' local memory, but it is shared between all work-items in a group. It can be thought of as a user-controlled cache. It is especially useful for divide-and-conquer problems where each part of computation is handled by one work-group. Local memory can be used to store the result of such a computation. Local memory is allocated per kernel execution and it cannot be filled with host data, so you have to initialize it yourself. The canonical way to allocate it is to create a access::target::local accessor inside a command group, passing it the requested allocation size.
+* A memória local é específica para um único grupo de trabalho. Grupos de trabalho não podem acessar a memória local de outros, mas ela é compartilhada entre todos os itens de trabalho de um grupo. Pode ser pensado como um cache controlado pelo usuário. É especialmente útil para problemas de dividir e conquistar, onde cada parte da computação é tratada por um grupo de trabalho. A memória local pode ser usada para armazenar o resultado de tal cálculo. A memória local é alocada por execução do _kernel_ e não pode ser preenchida com dados do _host_, portanto, você deve inicializá-la. A maneira canônica de alocá-la é criar um acessador `access::target::local` dentro de um grupo de comandos, passando o tamanho de alocação solicitado.
 
- * Private memory is a small region dedicated to each work-item. It is much like CPU register memory. All variables created in a kernel are stored in private memory. Additionally, dedicated private_memory objects can be created for this purpose.
+* Memória privada é uma pequena região dedicada a cada item de trabalho. É muito parecida com os registradores da CPU. Todas as variáveis criadas em um _kernel_ são armazenadas na memória privada. Além disso, objetos `private_memory` dedicados podem ser criados para essa finalidade.
 
- * Finally, constant memory is a read-only part of global memory, which similarly can reference a host-side buffer.
+* Finalmente, a memória constante é uma parte somente leitura da memória global, que também pode fazer referência a um _buffer_ do lado do _host_.
 
-In this example we will try to compute an array reduction - the sum of all its elements. The overall structure of the example is shown in the console, you can see the code that initializes an array of random values to be added and prints these values.
+Neste exemplo, tentaremos calcular uma redução de matriz - a soma de todos os seus elementos. A estrutura geral do exemplo é mostrada no console. Você pode ver o código que inicializa uma matriz de valores aleatórios a serem adicionados e imprime esses valores.
 
 ```
 std::cout << "Data: ";
@@ -26,10 +26,10 @@ std::cout << "Data: ";
   }
 ```
 
-## Parallel reduction
+## Redução paralela
 
-At the moment this code will simply display the contents of the array at position 0 since no operation has been done on the array.
+No momento, esse código simplesmente exibe o conteúdo da matriz na posição 0, pois nenhuma operação foi realizada na matriz.
 
-@[Parallel Reduction]({"stubs": ["src/exercises/memory_1.cpp"],"command": "sh /project/target/run.sh memory_1", "layout": "aside"})
+@[Redução paralela]({"stubs": ["src/exercises/memory_1.cpp"],"command": "sh /project/target/run.sh memory_1", "layout": "aside"})
 
 

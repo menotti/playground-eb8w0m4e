@@ -1,42 +1,42 @@
-# Hello World
+# Olá mundo
 
-This first exercise will guide you through the steps involved in writing your first SYCL application. We'll work through the equivalent of "hello world" for parallel programming, a vector add. This will add two vectors together, but crucially SYCL will enable this addition to be done in parallel.
+Este primeiro exercício o guiará pelas etapas envolvidas na criação do sua primeira aplicação OpenCL. Trabalharemos com o equivalente a um "olá mundo" para programação paralela, uma adição de vetores. Ela adicionará dois vetores, mas crucialmente o OpenCL permitirá que essa adição seja feita em paralelo.
 
-## Including the SYCL Header File
+## Incluindo o arquivo de cabeçalho OpenCL
 
-The first line in every SYCL application is to include the header file `CL/sycl.hpp`.
+A primeira linha em toda aplicação OpenCL deve incluir o arquivo de cabeçalho `CL/cl.hpp`.
 
-`#include <CL/sycl.hpp>`
+`#include <CL/cl.hpp>`
 
-## Setup Host Storage
+## Configurar armazenamento do _host_
 
-In main, we begin by setting up host storage for the data that we want to operate on. Our goal is to compute c = a + b, where the variables are vectors. To help us achieve this, SYCL provides the vec<T, size> type, which is a vector of a basic scalar type. It has template parameters for the scalar type and the size. It is meant to be used more like a geometrical vector than std::vector, and so it only supports sizes of up to 16. But dont despair, there are plenty of ways to work on larger sets of data. We use float4, which is just vec<float, 4>.
+No `main`, começamos configurando o armazenamento do _host_ para os dados nos quais queremos operar. Nosso objetivo é calcular `c = a + b`, onde as variáveis são vetores. Para nos ajudar a conseguir isso, o SYCL fornece o tipo `vec<T, size>`, que é um vetor de um tipo escalar básico. Ele possui parâmetros de _template_ para o tipo escalar e o tamanho. Ele deve ser usado mais como um vetor geométrico do que `std::vector` e, portanto, suporta apenas tamanhos de até 16. Mas não se desespere, existem várias maneiras de trabalhar com conjuntos maiores de dados. Usamos `float4`, que é apenas `vec<float, 4>`.
 
 ```
-sycl::float4 a = { 1.0, 2.0, 3.0, 4.0 };
-sycl::float4 b = { 4.0, 3.0, 2.0, 1.0 };
+sycl::float4 a = { 1.1, 2.2, 3.3, 4.4 };
+sycl::float4 b = { 4.4, 3.3, 2.2, 1.1 };
 sycl::float4 c = { 0.0, 0.0, 0.0, 0.0 };
 ```
 
-## Selecting Your Device
+## Selecionando seu dispositivo
 
-In SYCL there are different ways to configure and select the devices we want to use. SYCL provides a default selector that tries to select the most appropriate device in your system. It's possible to use a custom selector but since we only have one device we use the default selector.
+Em SYCL, existem diferentes maneiras de configurar e selecionar os dispositivos que queremos usar. O SYCL fornece um seletor padrão que tenta selecionar o dispositivo mais apropriado no seu sistema. É possível usar um seletor personalizado, mas como temos apenas um dispositivo, usamos o seletor padrão.
 
 `cl::sycl::default_selector selector;`
 
-## Setting up a SYCL Queue
+## Configurando uma fila (Queue) SYCL
 
-In order to send our tasks to be scheduled and executed on the target device we need to use a SYCL queue. We set this up and pass it our selector so that it knows what device to select when running the tasks.
+Para enviar nossas tarefas para serem agendadas e executadas no dispositivo de destino, precisamos usar uma fila (Queue) SYCL. Configuramos isso e passamos a ela nosso seletor para que ele saiba qual dispositivo selecionar ao executar as tarefas.
 
 `cl::sycl::queue myQueue(selector);`
 
-## Setup Device Storage
+## Configurar armazenamento do dispositivo
 
-On most systems, the host and the device do not share physical memory. For example, the CPU might use RAM and the GPU might use its own on-die VRAM. SYCL needs to know which data it will be sharing between the host and the devices.
+Na maioria dos sistemas, o _host_ e o dispositivo não compartilham memória física. Por exemplo, a CPU pode usar RAM e a GPU pode usar sua própria VRAM interna. O SYCL precisa saber quais dados serão compartilhados entre o _host_ e os dispositivos.
 
-For this purpose, SYCL buffers exist. The buffer<T, dims> class is generic over the element type and the number of dimensions, which can be one, two or three. When passed a raw pointer like in this case, the buffer(T* ptr, range size) constructor takes ownership of the memory it has been passed. This means that we absolutely cannot use that memory ourselves while the buffer exists, which is why we begin a C++ scope. At the end of their scope, the buffers will be destroyed and the memory returned to the user. The size argument is a range<dims> object, which has to have the same number of dimensions as the buffer and is initialized with the number of elements in each dimension. Here, we have one dimension with one element.
+Para esse fim, existem _buffers_ SYCL. A classe `buffer<T, dims>` é genérica sobre o tipo de elemento e o número de dimensões, que podem ser uma, duas ou três. Quando passado um ponteiro bruto, como neste caso, o construtor `buffer(T* ptr, range_size)` assume a propriedade da memória pela qual foi passado. Isso significa que absolutamente não podemos usar essa memória enquanto o _buffer_ existe, e é por isso que começamos um escopo C++ (usando `{...}` para delimitá-lo). No final de seu escopo, os _buffers_ serão destruídos e a memória retornada ao usuário. O argumento `range_size` é um objeto de intervalo <dims>, que precisa ter o mesmo número de dimensões que o _buffer_ e é inicializado com o número de elementos em cada dimensão. Aqui, temos uma dimensão com um elemento.
 
-Buffers are not associated with a particular queue or context, so they are capable of handling data transparently between multiple devices. They also do not require read/write information, as this is specified per operation.
+Os buffers não estão associados a uma fila ou contexto específico, portanto, eles são capazes de manipular dados de forma transparente entre vários dispositivos. Eles também não exigem informações de leitura/gravação, pois isso é especificado por operação.
 
 ```
 sycl::buffer<sycl::float4, 1> a_sycl(&a, sycl::range<1>(1));
@@ -44,19 +44,19 @@ sycl::buffer<sycl::float4, 1> b_sycl(&b, sycl::range<1>(1));
 sycl::buffer<sycl::float4, 1> c_sycl(&c, sycl::range<1>(1));
 ```
 
-## Executing the Kernel
+## Executando o _kernel_
 
-### Creating a Command Group
+### Criando um grupo de comandos
 
-The whole thing is technically a single function call to `queue::submit`. `submit` accepts a function object parameter, which encapsulates a command group. For this purpose, the function object accepts a command group handler constructed by the SYCL runtime and handed to us as the argument. All operations using a given command group handler are part of the same command group.
+Tudo consiste tecnicamente em uma única chamada de função para `queue::submit`. `submit` aceita um parâmetro de objeto de função, que encapsula um grupo de comandos. Para esse propósito, o objeto de função aceita um manipulador de grupo de comandos `cgh` construído pelo _runtime_ SYCL e entregue a nós como argumento. Todas as operações usando um determinado manipulador de grupo de comandos fazem parte do mesmo grupo de comandos.
 
 `myQueue.submit([&](cl::sycl::handler &cgh)`
 
-A command group is a way to encapsulate a device-side operation and all its data dependencies in a single object by grouping all the related commands (function calls). Effectively, what this achieves is preventing data race conditions, resource leaking and other problems by letting the SYCL runtime know the prerequisites for executing device-side code correctly.
+Um grupo de comandos é uma maneira de encapsular uma operação do lado do dispositivo e todas as suas dependências de dados em um único objeto, agrupando todos os comandos relacionados (chamadas de função). Efetivamente, o que isso alcança é impedir condições de corrida de dados, vazamento de recursos e outros problemas, permitindo que o _runtime_ SYCL conheça os pré-requisitos para executar corretamente o código do lado do dispositivo.
 
-### Data Accessors
+### Acessadores de dados (_Data Accessors_)
 
-In our command group, we first setup accessors. In general, these objects define the inputs and outputs of a device-side operation. The accessors also provide access to various forms of memory. In this case, they allow us to access the memory owned by the buffers created earlier. We passed ownership of our data to the buffer, so we can no longer use the float4 objects, and accessors are the only way to access data in buffer objects.
+Em nosso grupo de comandos, primeiro configuramos os acessadores. Em geral, esses objetos definem as entradas e saídas de uma operação do lado do dispositivo. Os acessadores também fornecem acesso a várias formas de memória. Nesse caso, eles nos permitem acessar a memória pertencente aos _buffers_ criados anteriormente. Passamos a propriedade de nossos dados para o _buffer_, para que não possamos mais usar os objetos `float4`, e os acessadores são a única maneira de acessar dados em objetos de _buffer_.
 
 ```
 auto a_acc = a_sycl.get_access<sycl::access::mode::read>(cgh);
@@ -64,13 +64,13 @@ auto b_acc = b_sycl.get_access<sycl::access::mode::read>(cgh);
 auto c_acc = c_sycl.get_access<sycl::access::mode::discard_write>(cgh);
 ```
 
-The buffer::get_access(handler&) method takes an access mode argument. We use access::mode::read for the arguments and access::mode::discard_write for the result. discard_write can be used whenever we write to the whole buffer and do not care about its previous contents. Since it will be overwritten entirely, we can discard whatever was there before.
+O método `buffer::get_access(handler&)` usa um argumento do modo de acesso. Usamos `access::mode::read` para os argumentos e `access::mode::discard_write` para o resultado. `discard_write` pode ser usado sempre que escrevemos em todo o _buffer_ e não nos importamos com o conteúdo anterior. Como ele será totalmente sobrescrito, podemos descartar o que havia antes.
 
-The second parameter is the type of memory we want to access the data from. We will see the available types of memory in the section on memory accesses. For now we use the default value.
+O segundo parâmetro é o tipo de memória da qual queremos acessar os dados. Veremos os tipos de memória disponíveis na seção sobre acessos à memória. Por enquanto, usamos o valor padrão.
 
-### Defining a Kernel Function
+### Definindo uma função do _kernel_
 
-In SYCL there are various ways to define a kernel function that will execute on a device depending on the kind of parallelism you want and the different features you require. The simplest of these is the `cl::sycl::handler::single_task` function, which takes a single parameter, being a C++ function object and executes that function object exactly once on the device. The C++ function object does not take any parameters, however it is important to note that if the function object is a lambda it must capture by value and if it is a struct or class it must define all members as value members.
+No SYCL, existem várias maneiras de definir uma função do _kernel_ que será executada em um dispositivo, dependendo do tipo de paralelismo desejado e dos diferentes recursos necessários. A mais simples delas é a função `cl::sycl::handler::single_task`, que utiliza um único parâmetro, sendo um objeto de função C++ e executa esse objeto de função exatamente uma vez no dispositivo. O objeto da função C++ não aceita nenhum parâmetro, no entanto, é importante observar que, se o objeto da função for um _lambda_, ele deverá capturar por valor e, se for uma estrutura ou classe, deverá definir todos os membros como membros por valor.
 
 ```
    cgh.single_task<class vector_addition>([=] () {
@@ -79,15 +79,15 @@ In SYCL there are various ways to define a kernel function that will execute on 
 });
 ```
 
-## Cleaning Up
+## Limpando
 
-One of the features of SYCL is that it makes use of C++ RAII (resource aquisition is initialisation), meaning that there is no explicit cleanup and everything is done via the SYCL object destructors.
+Um dos recursos do SYCL é o uso do C++ RAII (resource aquisition is initialisation: aquisição de recursos é inicialização), o que significa que não há limpeza explícita e tudo é feito por meio dos destruidores de objetos SYCL.
 ```
 {
    ...
 }
 ```
 
-# Run it!
+# Vamos executar!
 
-@[Hello World from SYCL]({"stubs": ["src/exercises/hello_world.cpp"],"command": "sh /project/target/run.sh hello_world", "layout": "aside"})
+@[Olá mundo em SYCL]({"stubs": ["src/exercises/hello_world.cpp"],"command": "sh /project/target/run.sh hello_world", "layout": "aside"})

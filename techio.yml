@@ -1,44 +1,44 @@
-title: Introduction to SYCL
+title: Introdução ao OpenCL
 plan:
-- title: Introduction
-  description: This section introduces heterogeneous computing.
+- title: Introdução
+  description: Esta seção apresenta a computação heterogênea.
   plan:
-  - title: Introduction to SYCL
+  - title: Introdução ao OpenCL
     statement: markdowns/intro.md
-  - title: Getting Started
+  - title: Começando
     statement: markdowns/configuration.md
-  - title: Hello World
+  - title: Olá mundo
     statement: markdowns/hello_world.md
-  - title: Host Setup and SYCL Queue
+  - title: Configuração do host e fila (Queue) OpenCL 
     statement: markdowns/vector_ops_1.md
-  - title: Device Memory using Buffers and Accessors
+  - title: Memória do dispositivo usando buffers e acessadores
     statement: markdowns/vector_ops_2.md
-  - title: SYCL Kernel Programming - The single_task API
+  - title: Programação de Kernel OpenCL - A API single_task
     statement: markdowns/vector_ops_3.md
-  - title: Quiz
+  - title: Questionário
     statement: markdowns/summary.md
-  - title: Error Handling
+  - title: Tratamento de erros
     statement: markdowns/error_handling.md
-- title: SYCL Memory and Synchronization
-  description: This section introduces memory and synchronization in SYCL
+- title: Memória OpenCL e Sincronização
+  description: Esta seção apresenta memória e sincronização no OpenCL
   plan:
-  - title: Memory And Synchronization
+  - title: Memória e Sincronização
     statement: markdowns/sycl_memory_1.md
-  - title: Reading Hardware Information
+  - title: Lendo informações do hardware
     statement: markdowns/sycl_memory_2.md
-  - title: The Reduction Loop
+  - title: O loop de redução
     statement: markdowns/sycl_memory_3.md
-  - title: Using Local Memory, Barriers And Writing The Result
+  - title: Usando memória local, barreiras e escrevendo o resultado
     statement: markdowns/sycl_memory_4.md
-- title: Debugging SYCL Applications
-  description: This section introduces debugging SYCL applications
+- title: Depurando aplicações OpenCL
+  description: Esta seção introduz a depuração de aplicações OpenCL
   plan:
-  - title: Debugging SYCL Applications
+  - title: Depurando aplicações OpenCL 
     statement: markdowns/sycl_debugging.md
-- title: Learn More About SYCL
-  description: Learn more about developing with SYCL
+- title: Saiba mais sobre o OpenCL
+  description: Saiba mais sobre o desenvolvimento com OpenCL
   plan:
-  - title: More Ways to Learn About SYCL
+  - title: Mais maneiras de aprender sobre o OpenCL
     statement: markdowns/sycl_learn_more.md
 projects:
   cpp:

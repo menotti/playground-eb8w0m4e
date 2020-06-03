@@ -1,27 +1,21 @@
-# Getting Started with SYCL
+# Começando com OpenCL
 
-## How does SYCL work?
+## Como o OpenCL funciona?
 
-A SYCL implementation consists of two main components; a SYCL device compiler, which compiles your code for OpenCL devices, and a SYCL runtime library which provides the high level interface writing SYCL applications and the runtime for executing your device code on OpenCL devices.
+Uma implementação OpenCL consiste em dois componentes principais: (i) um compilador que compila seu código para dispositivos OpenCL, e (ii) uma biblioteca de tempo de execução  que fornece a interface de alto nível para escrever aplicativos OpenCL e o _runtime_ para executar o código do dispositivo em dispositivos OpenCL.
 
-## What does SYCL run on?
+## Em que o OpenCL é executado?
 
-SYCL can target a wide range of OpenCL devices on any given system such as multi-core CPUs, GPU, FPGA, DSPs and other kinds of accelerators and specialised processors. For example ComputeCpp, a SYCL 1.2.1 conformant implementation, enables SYCL code to be run on Intel, AMD, ARM, Renesas, NVIDIA and in the future Imagination processors.
+O OpenCL pode atingir uma ampla variedade de dispositivos em qualquer sistema, como CPUs com vários núcleos, GPUs, FPGAs, DSPs e outros tipos de aceleradores e processadores especializados. 
 
-The ComputeCpp package provides a tool called `computecpp_info`, which can be used for a variety of things, but primarily for detecting supported devices on your system that can be used by ComputeCpp.
+O pacote OpenCL fornece uma ferramenta chamada `clinfo`, que pode ser usada para detectar dispositivos suportados no sistema.
 
-For the purposes of demonstration we can run `computecpp_info` here to display the OpenCL device(s) available to this tutorial.
+Para fins de demonstração, podemos executar o `clinfo` aqui para exibir os dispositivos OpenCL disponíveis para este tutorial.
 
-Hit the "Run" button to see what the output looks like.
+Clique no botão `Run` para ver como é sua saída:
 
-@[ComputeCpp Info]({"command": "sh /project/target/validate.sh"})
+@[OpenCL Info]({"command": "sh /project/target/validate.sh"})
 
-* Note that this tutorial is running in a cloud instance and so is using an Intel CPU, no GPU or accelerator processor is available.
+* Observe que este tutorial está sendo executado em uma instância de nuvem e, portanto, está usando uma CPU Intel, não há GPU ou processador acelerador disponível.
 
-The key line to check is this one
-
-`Device is supported                     : YES - Tested internally by Codeplay Software Ltd.`
-
-As you can see from the output of computecpp_info the only supported device is the "host" which is the Intel CPU. Although it is unlikely to offer any performance improvements in the absence of a GPU it enables us to run our SYCL code using ComputeCpp.
-
-
+Como você pode ver na saída de comando `clinfo`, o único dispositivo suportado é o "host", que é a CPU Intel. Embora seja improvável oferecer melhorias de desempenho na ausência de uma GPU, ele permite executar nosso código OpenCL.

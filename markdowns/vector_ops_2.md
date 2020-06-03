@@ -1,12 +1,12 @@
-# Device Memory using Buffers and Accessors
+#  Memória do dispositivo usando _buffers_ e acessadores
 
-## Setup Device Memory - **Buffers**
+## Configurando a memória do dispositivo - **_Buffers_**
 
-### Description
+### Descrição
 
-In order to handle data on the device memory we need to create SYCL buffers.
+Para manipular dados na memória do dispositivo, precisamos criar _buffers_ SYCL.
 
-The constructor for buffers for a raw data pointer to the data to be managed is the following:
+O construtor de _buffers_ para um ponteiro de dados brutos a serem gerenciados é o seguinte:
 
 ```cpp
 cl::sycl::buffer<typename T, int dimensions>(
@@ -15,17 +15,17 @@ cl::sycl::buffer<typename T, int dimensions>(
 );
 ```
 
-### Task
+### Tarefas
 
-Create buffers for the 2 input vectors as well as for the output one.
+Crie _buffers_ para os 2 vetores de entrada e também para o de saída.
 
-Location in the source code:
+Localização no código fonte:
 
 ```cpp
 // <<Setup device memory>>
 ```
 
-<details><summary>Hint</summary>
+<details><summary>Dica</summary>
 <p>
 
 ```cpp
@@ -36,50 +36,50 @@ sycl::buffer<sycl::float4, 1> buf_a(&a, cl::sycl::range<1>{1});
 </p>
 </details>
 
-## Access Device Memory - **Accessors**
+## Acessando a memória do dispositivo - **_Accessors_**
 
-### Description
+### Descrição
 
-SYCL has the concept of accessors which are used to access request control over the device memory from the buffer objects.
+O SYCL tem o conceito de acessadores que são usados para acessar o controle de solicitação sobre a memória do dispositivo a partir dos objetos _buffer_.
 
-The different access modes are encapsulated in the following enum class:
+Os diferentes modos de acesso são encapsulados na seguinte classe enum:
 
 ```cpp
 enum class mode { 
   read,
   write, 
   read_write, 
-  discard_wirte, 
+  discard_write, 
   discard_read_write,
   atomic
 };
 ``` 
-that lives in the `access` namespace.
+localizada no namespace `access`.
 
-At this stage we are only going to focus on the more common ones: `read`, `write`, and `read_write`.
+Nesta fase, focaremos apenas os mais comuns: `read`, `write` e `read_write`.
 
-A SYCL accessor can be created from a buffer by using the following construct:
+Um acessador SYCL pode ser criado a partir de um _buffer_ usando a seguinte construção:
 
 ```cpp
 // e.g., read access to buffer memory
 auto sycl_acc = sycl_buf.get_access<cl::sycl::access::mode::read>(cgh)
 ```
 
-where `cgh` is an instance of the SYCL command group handler object `cl::sycl::handler`. Accessors are required to be created inside the command group for which they will be used.
+onde `cgh` é uma instância do objeto manipulador do grupo de comandos SYCL `cl::sycl::handler`. É necessário que os acessadores sejam criados dentro do grupo de comandos para o qual serão usados.
 
-### Task
+### Tarefas
 
-Request access from the buffers for access to the data on the device.
-- Read access from the input buffers
-- Write access from the output buffer
+Solicite acesso dos _buffers_ para acessar os dados no dispositivo.
+- Acesso de leitura dos _buffers_ de entrada
+- Acesso de gravação do _buffer_ de saída
 
-Location in the source code:
+Localização no código fonte:
 
 ```cpp
 // <<Request device memory access>>
 ```
 
-<details><summary>Hint</summary>
+<details><summary>Dica</summary>
 <p>
 
 ```cpp
@@ -90,6 +90,6 @@ auto a_acc = buf_a.get_access<sycl::access::mode::read>(cgh);
 </p>
 </details>
 
-# Run it!
+# Vamos executar!
 
-@[Hello World from SYCL]({"stubs": ["src/exercises/vector-ops_2.cpp"],"command": "sh /project/target/run.sh vector-ops_2", "layout": "aside"})
+@[Olá mundo em SYCL]({"stubs": ["src/exercises/vector-ops_2.cpp"],"command": "sh /project/target/run.sh vector-ops_2", "layout": "aside"})

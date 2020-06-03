@@ -1,11 +1,9 @@
-# Introduction to SYCL
+# Introdução ao OpenCL
 
-## What is SYCL?
+## O que é OpenCL?
 
-SYCL (pronounced ‘sickle’) is a royalty-free, cross-platform abstraction layer that builds on the underlying concepts, portability and efficiency of OpenCL that enables code for heterogeneous processors to be written in a “single-source” style using completely standard C++. SYCL enables single source development where C++ template functions can contain both host and device code to construct complex algorithms that use OpenCL acceleration, and then re-use them throughout their source code on different types of data.
+O OpenCL (Open Computing Language) é um padrão aberto e isento de royalties para programação paralela em múltiplas plataformas de diversos aceleradores encontrados em supercomputadores, servidores em nuvem, computadores pessoais, dispositivos móveis e plataformas embarcadas. O OpenCL pode melhorar o desempenho de um amplo espectro de aplicações de várias areas, incluindo ferramentas criativas profissionais, software científico e médico, processamento de imagens e treinamento e inferências em redes neurais.
 
-SYCL is entirely standard C++ so there are no language extensions or attributes required.
+Este tutorial tem como objetivo ensinar os fundamentos do OpenCL por meio da explicação de uma aplicação simples.
 
-This tutorial aims to teach you the fundamentals of SYCL through the explanation of a simple application.
-
-We will use ComputeCpp, a SYCL v1.2.1 conformant implementation to compile and execute the applications.
+Usaremos o uma implementação compatível com OpenCL 1.2 para compilar e executar os exemplos.

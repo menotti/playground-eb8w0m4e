@@ -1,6 +1,6 @@
-# Using Local Memory
+# Usando memória local
 
-We'll now load the data into local memory, as we explained before using local memory can provide significant performance improvements.
+Agora, carregaremos os dados na memória local, como explicamos antes, usar a memória local pode fornecer melhorias significativas de desempenho.
 
 ```
   size_t local_id = item.get_local_linear_id();
@@ -15,13 +15,13 @@ We'll now load the data into local memory, as we explained before using local me
   item.barrier(sycl::access::fence_space::local_space);
 ```
 
-In the kernel, we firstly zero-initialize the local memory, since it can in fact contain garbage data. The key point here is that 0 is the invariant of our reduction, meaning that x + 0 = x, so we can add the whole array safely even if it isn't entirely filled with data to be reduced.
+No _kernel_, primeiramente inicializamos a memória local com zeros, pois ela pode de fato conter lixo. O ponto principal aqui é que `0` é invariável em nossa redução, significando que `x + 0 = x`, para que possamos adicionar toda a matriz com segurança, mesmo que ela não esteja totalmente preenchida com dados a serem reduzidos. 
 
-We divide our data into parts, each one being computed by a single work-group. The input data is required to be of even size, but it doesn't have to be a multiple of the work-group size. Hence, a few work-items in the last work-group can have no corresponding data. For this reason, the initial load from global to local memory is guarded by an if-statement. As mentioned in the "parallelism" section, this is usually a bad idea. In this case, however, it is okay, because at most one work-group will have divergent work-items. We use a small array for illustration purposes and a specialized kernel would technically be faster, but any real use case can be expected to have much more input data.
+Dividimos nossos dados em partes, cada uma sendo computada por um único grupo de trabalho. Os dados de entrada devem ter tamanho uniforme, mas não precisam ser múltiplos do tamanho do grupo de trabalho. Portanto, alguns itens de trabalho no último grupo de trabalho podem não ter dados correspondentes. Por esse motivo, o carregamento inicial da memória global para a local é protegido por uma instrução `if`. Como mencionado na seção "paralelismo", isso geralmente é uma má idéia. Nesse caso, no entanto, tudo bem, porque no máximo um grupo de trabalho terá itens de trabalho divergentes. Utilizamos uma pequena matriz para fins de ilustração e um _kernel_ especializado seria tecnicamente mais rápido, mas qualquer caso de uso real pode ter muito mais dados de entrada. 
 
-After the load is performed with an addition of the two elements corresponding to each work-item, we emit a barrier with a local memory fence. We have to stop for a bit and understand why this is necessary. In the OpenCL memory model, all operations across work-items have relaxed semantics. For example, in the following pseudocode we execute two functions in parallel over the same data:
+Depois que a carga é executada com a adição dos dois elementos correspondentes a cada item de trabalho, emitimos uma barreira com uma cerca de memória local. Temos que parar um pouco e entender por que isso é necessário. No modelo de memória OpenCL, todas as operações nos itens de trabalho têm semântica relaxada. Por exemplo, no pseudocódigo a seguir, executamos duas funções em paralelo sobre os mesmos dados:
 
-### Relaxed Write Pseudo Code
+### Pseudo código com gravação relaxada
 
 ```
   int x = 0;
@@ -41,11 +41,11 @@ After the load is performed with an addition of the two elements corresponding t
   in_parallel(thread_a, thread_b);
 ```
 
-In a relaxed memory model, work-item B can in fact print 0 2. This looks wrong, because work-item A must have written x into memory before it wrote y. The key point is that operation work-item B can observe A's operations in a different order. This 'really' helps hardware performance, but it comes at the cost of confusing behaviour. To deal with this problem, we have to emit memory fences. Moreover, even if we don't mind reordering, we might want to make sure that all results of write operations propagate between work-items - otherwise they could stay in per-work-item cache and not be visible across work-items.
+Em um modelo de memória relaxada, o item de trabalho B pode realmente imprimir 0 2. Isso parece errado, porque o item de trabalho A deve ter gravado x na memória antes de escrever y. O ponto principal é que o item de trabalho da operação B pode observar as operações de A em uma ordem diferente. Isso 'realmente' ajuda no desempenho do hardware, mas tem um custo de comportamento confuso. Para lidar com esse problema, precisamos emitir cercas de memória. Além disso, mesmo que não nos importemos em reordenar, podemos querer garantir que todos os resultados das operações de gravação sejam propagados entre itens de trabalho - caso contrário, eles podem permanecer no cache por item de trabalho e não ficar visíveis entre os itens de trabalho.
 
-To synchronize the state of memory, we use the item::barrier(access::fence_space) operation. A SYCL barrier does two things. Firstly, it makes sure that each work-item within the work-group reaches the barrier call. In other words, it guarantees that the work-group is synchronized at a certain point in the code. It is very important to make sure that 'either all work-items reach the barrier or none do'. For example, the following code is invalid:
+Para sincronizar o estado da memória, usamos a operação `item::barrier(access::fence_space)`. Uma barreira SYCL faz duas coisas. Em primeiro lugar, garante que cada item de trabalho dentro do grupo de trabalho atenda à chamada de barreira. Em outras palavras, garante que o grupo de trabalho seja sincronizado em um determinado ponto do código. É muito importante garantir que "todos os itens de trabalho cheguem à barreira ou nenhum". Por exemplo, o seguinte código é inválido:
 
-### Branch Barrier
+### Barreiras separadas
 
 ```
   if (local_id < 5) {
@@ -55,14 +55,13 @@ To synchronize the state of memory, we use the item::barrier(access::fence_space
   }
 ```
 
-It looks innocent, but the problem is that the two instructions are not the same barrier. Work-items below local id 5 will get to the first barrier while the rest will get to the other one, and the execution will stall, both groups waiting on each other forever. A simple transformation of factoring the barrier call out of the conditional would fix it.
+Parece inocente, mas o problema é que as duas instruções não são a mesma barreira. Os itens de trabalho abaixo do `local_id` 5 chegarão à primeira barreira, enquanto os demais chegarão à outra e a execução será interrompida, os dois grupos esperando um pelo outro para sempre. Uma simples transformação de fatorar a chamada de barreira para fora do condicional o consertaria.
 
-Secondly, item::barrier emits a memory fence in the specified space. It can be either access::fence_space::local_space, ::global_space or ::global_and_local. A fence ensures that the state of the specified space is consistent across all work-items within the work-group. Importantly, it is 'not possible' to synchronize between work-groups. They are entirely independent, and any write or read in the same global memory area done by two work-groups is a data race. For this reason, it is important to make sure each work-group only works on a dedicated region of global memory without crossover.
+Em segundo lugar, `item::barrier` emite uma cerca de memória no espaço especificado. Pode ser `access::fence_space::local_space`, `::global_space` ou `::global_and_local`. Uma cerca garante que o estado do espaço especificado seja consistente em todos os itens de trabalho do grupo de trabalho. É importante ressaltar que 'não é possível' sincronizar entre grupos de trabalho. Eles são totalmente independentes e qualquer gravação ou leitura na mesma área de memória global realizada por dois grupos de trabalho é uma corrida de dados. Por esse motivo, é importante garantir que cada grupo de trabalho funcione apenas em uma região dedicada da memória global sem cruzamento.
 
-Next, we reduce each work-group's array in local memory:
+Em seguida, reduzimos a matriz de cada grupo de trabalho na memória local:
 
-### Reduce Into One Element
-
+### Reduzir em um elemento
 ```
   for (size_t stride = 1; stride < wgroup_size; stride *= 2) {
     auto idx = 2 * stride * local_id;
@@ -74,16 +73,18 @@ Next, we reduce each work-group's array in local memory:
   }
 ```
 
-Since each iteration of the for loop depends on the previous one, we emit a barrier every time to synchronize work-items.
+Como cada iteração do loop `for` depende da anterior, emitimos uma barreira sempre para sincronizar itens de trabalho.
 
-Lastly, write a single number which is the result of this work-group's reduction into global memory.
+Por fim, escreva um número único que seja o resultado da redução desse grupo de trabalho na memória global.
 
-### Write Group Result To Global Memory
+### Gravar resultado do grupo na memória global
 
+```
   if (local_id == 0) {
     global_mem[item.get_group_linear_id()] = local_mem[0];
   }
+```
 
-And the result is obtained if you press the "Run" button below:
+O resultado é obtido se você pressionar o botão "Run" abaixo:
 
-@[Parallel Reduction]({"stubs": ["src/exercises/memory_4.cpp"],"command": "sh /project/target/run.sh memory_4", "layout": "aside"})
+@[Redução Paralela]({"stubs": ["src/exercises/memory_4.cpp"],"command": "sh /project/target/run.sh memory_4", "layout": "aside"})

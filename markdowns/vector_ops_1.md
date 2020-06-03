@@ -1,69 +1,68 @@
-# Host Setup and SYCL Queue
+# Configuração do _host_ e fila (_Queue_) SYCL
 
-This exercise is a slightly modified version of the vector addition we did in the previous example. You are going to take over in this one and complete the code for this application by yourself. Instructions are provided on each step of completion, so you should be able to do it. Let's begin. 
+Este exercício é uma versão ligeiramente modificada da adição de vetores que fizemos no exemplo anterior. Você assumirá o controle desta vez e concluirá o código para essa aplicação. São fornecidas instruções em cada etapa da conclusão, portanto, você deve ser capaz de fazê-lo. Vamos começar!
 
-> By now, you should know that you need to include the SYCL header file in order to use SYCL in your application. It is already included at the top of the source file - `#include <CL/sycl.hpp>`.
+> Até agora, você deve saber que precisa incluir o arquivo de cabeçalho SYCL para usar o SYCL em sua aplicação. Ele já está incluído na parte superior do arquivo de origem - `#include <CL/sycl.hpp>`.
 
-## Host Setup
+## Configuração do _host_
 
-### Description
+### Descrição
 
-The first step is to initialize the vector data on the host.
+O primeiro passo é inicializar os dados vetoriais no _host_.
 
-We will be using:
+Nós usaremos:
 
 ```cpp
 cl::sycl::float4
 ```
-
-which is a type alias for
+que é um _alias_ de tipo para
 
 ```cpp
 cl::sycl::vec<float, 4>
 ```
 
-It is a SYCL type struct that provides OpenCL vector functionality for host and device.
+É uma estrutura do tipo SYCL que fornece a funcionalidade do vetor OpenCL para _host_ e dispositivo.
 
-### Task
+### Tarefa
 
-Define 2 input vectors and 1 output vector.
+Defina 2 vetores de entrada e 1 vetor de saída.
 
-Inputs:
- - vector `a`: `{1.0, 1.0, 1.0, 1.0}`
- - vector `b`: `{1.0, 1.0, 1.0, 1.0}`
+Entradas:
+ - vetor `a`: `{1.0, 1.0, 1.0, 1.0}`
+ - vetor `b`: `{1.0, 1.0, 1.0, 1.0}`
 
-Output:
-- vector `c`: `{0.0, 0.0, 0.0, 0.0}`
+Resultado:
+- vetor `c`: `{0.0, 0.0, 0.0, 0.0}`
 
-Location in the source code:
+Localização no código fonte:
 
 ```cpp
 // <<Setup host memory>>
 ```
 
-<details><summary>Hint</summary>
+<details><summary>Dica</summary>
 <p>
 
 ```cpp
-sycl::float4 a = { 1.0f, 1.0f, 1.0f, 1.0f }; // input 1
+sycl::float4 a = { 1.0f, 1.0f, 1.0f, 1.0f }; // entrada 1
 ```
 
 </p>
 </details>
 
-## Initialize SYCL Queue
+## Inicializar uma fila SYCL
 
-### Description
+### Descrição
 
-SYCL queue is constructed from the selection of a supported device.
+Uma fila SYCL é construída a partir da seleção de um dispositivo suportado.
 
-The system is set to always force the execution of the SYCL examples on the CPU device. Thus, the default selector will select the CPU because of its heuristics to identify the supported platforms and device on our system.
+O sistema está configurado para sempre forçar a execução dos exemplos SYCL no dispositivo da CPU. Assim, o seletor padrão selecionará a CPU devido às suas heurísticas para identificar as plataformas e dispositivos suportados em nosso sistema.
 
-### Task
+### Tarefa
 
-Initialize a SYCL queue with either a CPU or default device selector.
+Inicialize uma fila SYCL com uma CPU ou seletor de dispositivo padrão.
 
-Location in the source code:
+Localização no código fonte:
 
 ```cpp
 // <<Setup SYCL queue>>
@@ -74,12 +73,12 @@ Location in the source code:
 
 ```cpp
 sycl::queue myQueue(sycl::default_selector{}); 
-// explicitly target the CPU: sycl::cpu_selector{}
+// seleciona explicitamente a CPU: sycl::cpu_selector{}
 ```
 
 </p>
 </details>
 
-# Run it!
+# Vamos executar!
 
-@[Hello World from SYCL]({"stubs": ["src/exercises/vector-ops_1.cpp"],"command": "sh /project/target/run.sh vector-ops_1", "layout": "aside"})
+@[Olá mundo em SYCL]({"stubs": ["src/exercises/vector-ops_1.cpp"],"command": "sh /project/target/run.sh vector-ops_1", "layout": "aside"})

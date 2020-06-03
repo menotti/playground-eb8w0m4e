@@ -1,20 +1,22 @@
-# Error Handling
+# Manipulação de erros
 
-In general, there are two kinds of errors in SYCL. These are synchronous and asynchronous. 
+Em geral, existem dois tipos de erros em SYCL. Estes são síncronos e assíncronos.
 
-Synchronous errors are classical C++ exceptions, thrown whenever the user calls a function with wrong arguments. These can be caught with a try..catch block.
+Erros síncronos são exceções clássicas do C++, lançadas sempre que o usuário chama uma função com argumentos errados. Estes podem ser capturados com um bloco `try...catch`.
 
-Asynchronous errors, on the other hand, are those that describe faults in asynchronously executed code, for example inside a command group or a kernel. Since they can occur in a different stackframe, asynchronous error cannot be propagated up the stack. By default, they are considered 'lost'. The way in which we can retrieve them is by providing an error handler function.
+Erros assíncronos, por outro lado, são aqueles que descrevem falhas no código executado de forma assíncrona, por exemplo, dentro de um grupo de comandos ou de um _kernel_. Como eles podem ocorrer em um quadro de pilha diferente, o erro assíncrono não pode ser propagado na pilha. Por padrão, eles são considerados 'perdidos'. A maneira pela qual podemos recuperá-los é fornecendo uma função de tratamento de erros.
 
-## Creating an Exception Handler
+## Criando um manipulador de exceções
 
-The handler is a function object that accepts an exception_list [link] parameter. The parameter is an iterable list of std::exception_ptr objects. In our simple handler, we rethrow the pointer (there is no way to read from it directly), catch it, and output the exception description.
+O manipulador é um objeto de função que aceita um parâmetro `exception_list`. O parâmetro é uma lista iterável de objetos `std::exception_ptr`. Em nosso manipulador simples, repetimos o ponteiro (não há como ler diretamente), capturamos e exibimos a descrição da exceção.
 
-`auto exception_handler = [] (sycl::exception_list exceptions) {`
+```
+auto exception_handler = [] (sycl::exception_list exceptions) {
+```
 
-## Execute With Wrong Parameters
+## Execução com parâmetros errados
 
-We setup a default queue and supply it with an invalid kernel. The reason why this code is erroneous is unimportant for now (it has to do with work-group sizes). Finally, we call queue::wait_and_throw [link]. This function blocks and waits for all enqueued tasks to finish. Then, it sends all asynchronous exceptions to our handler. Additionally, it is possible, but very unlikely, for it to directly throw a synchronous exception. For completeness, we also catch these.
+Configuramos uma fila padrão e fornecemos um _kernel_ inválido. A razão pela qual esse código está incorreto não é importante por enquanto (tem a ver com tamanhos de grupos de trabalho). Finalmente, chamamos `queue::wait_and_throw`. Essa função bloqueia e aguarda a conclusão de todas as tarefas enfileiradas. Em seguida, ele envia todas as exceções assíncronas ao nosso manipulador. Além disso, é possível, mas muito improvável, lançar diretamente uma exceção síncrona. Para ser completo, também capturamos.
 
 ```
 queue.submit([&] (sycl::handler& cgh) {
@@ -23,10 +25,10 @@ queue.submit([&] (sycl::handler& cgh) {
 });
 ```
 
-You might be wondering why the exception handler has to take an exception list rather than a single exception as the argument. A single wait_and_throw request might report multiple exceptions, so it is convenient to group them into a list object. Each request has a single list corresponding to it, so the user is not burdened with manually checking which errors are in which group.
+Você pode estar se perguntando por que o manipulador de exceções precisa usar uma lista de exceções em vez de uma única exceção como argumento. Uma única solicitação `wait_and_throw` pode relatar várias exceções, portanto, é conveniente agrupá-las em um objeto de lista. Cada solicitação possui uma lista única correspondente, portanto, o usuário não se encarrega de verificar manualmente quais erros estão em qual grupo.
 
-## Run It
+## Vamor executar!
 
-This example intentionally throws an exception and we can see the output
+Este exemplo lança intencionalmente uma exceção e podemos ver sua saída
 
-@[Error Handling With SYCL]({"stubs": ["src/exercises/error_handling.cpp"],"command": "sh /project/target/run.sh error_handling", "layout": "aside"})
+@[Tratamento de erros em SYCL]({"stubs": ["src/exercises/error_handling.cpp"],"command": "sh /project/target/run.sh error_handling", "layout": "aside"})
