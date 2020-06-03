@@ -1,143 +1,82 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-#include <CL/opencl.h>
+#include <iostream>
+#include <CL/cl.hpp>
  
-// OpenCL kernel. Each work item takes care of one element of c
-const char *kernelSource =                                       "\n" \
-"#pragma OPENCL EXTENSION cl_khr_fp64 : enable                    \n" \
-"__kernel void vecAdd(  __global double *a,                       \n" \
-"                       __global double *b,                       \n" \
-"                       __global double *c,                       \n" \
-"                       const unsigned int n)                    \n" \
-"{                                                               \n" \
-"    //Get our global thread ID                                  \n" \
-"    int id = get_global_id(0);                                  \n" \
-"                                                                \n" \
-"    //Make sure we do not go out of bounds                      \n" \
-"    if (id < n)                                                 \n" \
-"        c[id] = a[id] + b[id];                                  \n" \
-"}                                                               \n" \
-                                                                "\n" ;
+int main(){
+    //get all platforms (drivers)
+    std::vector<cl::Platform> all_platforms;
+    cl::Platform::get(&all_platforms);
+    if(all_platforms.size()==0){
+        std::cout<<" No platforms found. Check OpenCL installation!\n";
+        exit(1);
+    }
+    cl::Platform default_platform=all_platforms[0];
+    std::cout << "Using platform: "<<default_platform.getInfo<CL_PLATFORM_NAME>()<<"\n";
  
-int main( int argc, char* argv[] )
-{
-    // Length of vectors
-    unsigned int n = 100000;
+    //get default device of the default platform
+    std::vector<cl::Device> all_devices;
+    default_platform.getDevices(CL_DEVICE_TYPE_ALL, &all_devices);
+    if(all_devices.size()==0){
+        std::cout<<" No devices found. Check OpenCL installation!\n";
+        exit(1);
+    }
+    cl::Device default_device=all_devices[0];
+    std::cout<< "Using device: "<<default_device.getInfo<CL_DEVICE_NAME>()<<"\n";
  
-    // Host input vectors
-    double *h_a;
-    double *h_b;
-    // Host output vector
-    double *h_c;
  
-    // Device input buffers
-    cl_mem d_a;
-    cl_mem d_b;
-    // Device output buffer
-    cl_mem d_c;
+    cl::Context context({default_device});
  
-    cl_platform_id cpPlatform;        // OpenCL platform
-    cl_device_id device_id;           // device ID
-    cl_context context;               // context
-    cl_command_queue queue;           // command queue
-    cl_program program;               // program
-    cl_kernel kernel;                 // kernel
+    cl::Program::Sources sources;
  
-    // Size, in bytes, of each vector
-    size_t bytes = n*sizeof(double);
+    // kernel calculates for each element C=A+B
+    std::string kernel_code=
+            "   void kernel simple_add(global const int* A, global const int* B, global int* C){       "
+            "       C[get_global_id(0)]=A[get_global_id(0)]+B[get_global_id(0)];                 "
+            "   }                                                                               ";
+    sources.push_back({kernel_code.c_str(),kernel_code.length()});
  
-    // Allocate memory for each vector on host
-    h_a = (double*)malloc(bytes);
-    h_b = (double*)malloc(bytes);
-    h_c = (double*)malloc(bytes);
- 
-    // Initialize vectors on host
-    int i;
-    for( i = 0; i < n; i++ )
-    {
-        h_a[i] = sinf(i)*sinf(i);
-        h_b[i] = cosf(i)*cosf(i);
+    cl::Program program(context,sources);
+    if(program.build({default_device})!=CL_SUCCESS){
+        std::cout<<" Error building: "<<program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(default_device)<<"\n";
+        exit(1);
     }
  
-    size_t globalSize, localSize;
-    cl_int err;
  
-    // Number of work items in each local work group
-    localSize = 64;
+    // create buffers on the device
+    cl::Buffer buffer_A(context,CL_MEM_READ_WRITE,sizeof(int)*10);
+    cl::Buffer buffer_B(context,CL_MEM_READ_WRITE,sizeof(int)*10);
+    cl::Buffer buffer_C(context,CL_MEM_READ_WRITE,sizeof(int)*10);
  
-    // Number of total work items - localSize must be devisor
-    globalSize = ceil(n/(float)localSize)*localSize;
+    int A[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+    int B[] = {0, 1, 2, 0, 1, 2, 0, 1, 2, 0};
  
-    // Bind to platform
-    err = clGetPlatformIDs(1, &cpPlatform, NULL);
+    //create queue to which we will push commands for the device.
+    cl::CommandQueue queue(context,default_device);
  
-    // Get ID for the device
-    err = clGetDeviceIDs(cpPlatform, CL_DEVICE_TYPE_GPU, 1, &device_id, NULL);
+    //write arrays A and B to the device
+    queue.enqueueWriteBuffer(buffer_A,CL_TRUE,0,sizeof(int)*10,A);
+    queue.enqueueWriteBuffer(buffer_B,CL_TRUE,0,sizeof(int)*10,B);
  
-    // Create a context 
-    context = clCreateContext(0, 1, &device_id, NULL, NULL, &err);
  
-    // Create a command queue
-    queue = clCreateCommandQueue(context, device_id, 0, &err);
+    //run the kernel
+    cl::KernelFunctor simple_add(cl::Kernel(program,"simple_add"),queue,cl::NullRange,cl::NDRange(10),cl::NullRange);
+    simple_add(buffer_A,buffer_B,buffer_C);
  
-    // Create the compute program from the source buffer
-    program = clCreateProgramWithSource(context, 1,
-                            (const char **) & kernelSource, NULL, &err);
+    //alternative way to run the kernel
+    /*cl::Kernel kernel_add=cl::Kernel(program,"simple_add");
+    kernel_add.setArg(0,buffer_A);
+    kernel_add.setArg(1,buffer_B);
+    kernel_add.setArg(2,buffer_C);
+    queue.enqueueNDRangeKernel(kernel_add,cl::NullRange,cl::NDRange(10),cl::NullRange);
+    queue.finish();*/
  
-    // Build the program executable
-    clBuildProgram(program, 0, NULL, NULL, NULL, NULL);
+    int C[10];
+    //read result C from the device to array C
+    queue.enqueueReadBuffer(buffer_C,CL_TRUE,0,sizeof(int)*10,C);
  
-    // Create the compute kernel in the program we wish to run
-    kernel = clCreateKernel(program, "vecAdd", &err);
- 
-    // Create the input and output arrays in device memory for our calculation
-    d_a = clCreateBuffer(context, CL_MEM_READ_ONLY, bytes, NULL, NULL);
-    d_b = clCreateBuffer(context, CL_MEM_READ_ONLY, bytes, NULL, NULL);
-    d_c = clCreateBuffer(context, CL_MEM_WRITE_ONLY, bytes, NULL, NULL);
- 
-    // Write our data set into the input array in device memory
-    err = clEnqueueWriteBuffer(queue, d_a, CL_TRUE, 0,
-                                   bytes, h_a, 0, NULL, NULL);
-    err |= clEnqueueWriteBuffer(queue, d_b, CL_TRUE, 0,
-                                   bytes, h_b, 0, NULL, NULL);
- 
-    // Set the arguments to our compute kernel
-    err  = clSetKernelArg(kernel, 0, sizeof(cl_mem), &d_a);
-    err |= clSetKernelArg(kernel, 1, sizeof(cl_mem), &d_b);
-    err |= clSetKernelArg(kernel, 2, sizeof(cl_mem), &d_c);
-    err |= clSetKernelArg(kernel, 3, sizeof(unsigned int), &n);
- 
-    // Execute the kernel over the entire range of the data set 
-    err = clEnqueueNDRangeKernel(queue, kernel, 1, NULL, &globalSize, &localSize,
-                                                              0, NULL, NULL);
- 
-    // Wait for the command queue to get serviced before reading back results
-    clFinish(queue);
- 
-    // Read the results from the device
-    clEnqueueReadBuffer(queue, d_c, CL_TRUE, 0,
-                                bytes, h_c, 0, NULL, NULL );
- 
-    //Sum up vector c and print result divided by n, this should equal 1 within error
-    double sum = 0;
-    for(i=0; i<n; i++)
-        sum += h_c[i];
-    printf("final result: %f\n", sum/n);
- 
-    // release OpenCL resources
-    clReleaseMemObject(d_a);
-    clReleaseMemObject(d_b);
-    clReleaseMemObject(d_c);
-    clReleaseProgram(program);
-    clReleaseKernel(kernel);
-    clReleaseCommandQueue(queue);
-    clReleaseContext(context);
- 
-    //release host memory
-    free(h_a);
-    free(h_b);
-    free(h_c);
+    std::cout<<" result: \n";
+    for(int i=0;i<10;i++){
+        std::cout<<C[i]<<" ";
+    }
  
     return 0;
 }
