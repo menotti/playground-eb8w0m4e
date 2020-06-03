@@ -44,5 +44,5 @@ projects:
   cpp:
     root: /cpp-project
     runner:
-      name: rodburns/computecpp-16.04-ubuntu
-      version: computecpp_v113
+      name: alcidesmig/computecpp-16.04-ubuntu-mesa-common-dev
+      version: latest
