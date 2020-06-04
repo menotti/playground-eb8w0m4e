@@ -2,11 +2,11 @@
 
 sample=$1
 
-mkdir build
-cd build
 
-cmake ../ -GNinja -DCMAKE_CXX_COMPILER="/usr/bin/g++" -DOpenCL_INCLUDE_DIR="$OCL_INC" -DOpenCL_LIBRARY="$OCL_LIB/libOpenCL.so" -DSAMPLE_NAME=$sample > /dev/null
+cd /project/target/src/exercises/
 
-ninja $sample
+g++ ${sample}.cpp -o $sample -I${OCL_INC} -lOpenCL -L${OCL_LIB} -w
+
+#export COMPUTECPP_TARGET=cpu # host
 
 ./$sample
