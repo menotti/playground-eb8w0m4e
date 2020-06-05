@@ -1,92 +1,132 @@
 # Olá mundo
 
-Este primeiro exercício o guiará pelas etapas envolvidas na criação do sua primeira aplicação OpenCL. Trabalharemos com o equivalente a um "olá mundo" para programação paralela, uma adição de vetores. Ela adicionará dois vetores, mas crucialmente o OpenCL permitirá que essa adição seja feita em paralelo.
+Como de costume em qualquer tutorial de programação, vamos começar por este [olá mundo](https://us.fixstars.com/products/opencl/book/OpenCLProgrammingBook/first-opencl-program/) adaptado de um livro gratuito disponível na internet. O programa não faz nenhum cálculo, apenas retorna a mensagem **"Hello, World!"** gerada no _kernel_. Como a entrada e saída padrão do sistema não podem ser usadas a partir do _kernel_, ele apenas vai preencher a cadeia de caracteres e enviá-la ou programa principal que irá imprimi-la na console. 
 
 ## Incluindo o arquivo de cabeçalho OpenCL
 
-A primeira linha em toda aplicação OpenCL deve incluir o arquivo de cabeçalho `CL/cl.hpp`.
+Toda aplicação OpenCL deve incluir o arquivo de cabeçalho `CL/cl.h`:
 
-`#include <CL/cl.hpp>`
-
-## Configurar armazenamento do _host_
-
-No `main`, começamos configurando o armazenamento do _host_ para os dados nos quais queremos operar. Nosso objetivo é calcular `c = a + b`, onde as variáveis são vetores. Para nos ajudar a conseguir isso, o SYCL fornece o tipo `vec<T, size>`, que é um vetor de um tipo escalar básico. Ele possui parâmetros de _template_ para o tipo escalar e o tamanho. Ele deve ser usado mais como um vetor geométrico do que `std::vector` e, portanto, suporta apenas tamanhos de até 16. Mas não se desespere, existem várias maneiras de trabalhar com conjuntos maiores de dados. Usamos `float4`, que é apenas `vec<float, 4>`.
-
-```
-sycl::float4 a = { 1.1, 2.2, 3.3, 4.4 };
-sycl::float4 b = { 4.4, 3.3, 2.2, 1.1 };
-sycl::float4 c = { 0.0, 0.0, 0.0, 0.0 };
+```c
+#include <CL/cl.h>
 ```
 
-## Selecionando seu dispositivo
+Mas antes disso, nós estamos definindo `CL_USE_DEPRECATED_OPENCL_1_2_APIS` para usar a versão 1.2 da API sem gerar _warnings_ durante a compilação:
 
-Em SYCL, existem diferentes maneiras de configurar e selecionar os dispositivos que queremos usar. O SYCL fornece um seletor padrão que tenta selecionar o dispositivo mais apropriado no seu sistema. É possível usar um seletor personalizado, mas como temos apenas um dispositivo, usamos o seletor padrão.
+```c
+#define CL_USE_DEPRECATED_OPENCL_1_2_APIS
+```
 
-`cl::sycl::default_selector selector;`
+Esta versão não é a mais recente, mas é suportada pela maioria dos dispositivos OpenCL. 
 
-## Configurando uma fila (Queue) SYCL
+## Configuração no _host_
 
-Para enviar nossas tarefas para serem agendadas e executadas no dispositivo de destino, precisamos usar uma fila (Queue) SYCL. Configuramos isso e passamos a ela nosso seletor para que ele saiba qual dispositivo selecionar ao executar as tarefas.
+No `main`, nós definimos uma série de variáveis cujos tipos, definidos na biblioteca OpenCL, possuem o prefixo `cl_` que explicaremos a seguir: 
 
-`cl::sycl::queue myQueue(selector);`
+```c
+cl_device_id device_id = NULL;
+cl_context context = NULL;
+cl_command_queue command_queue = NULL;
+cl_mem memobj = NULL;
+cl_program program = NULL;
+cl_kernel kernel = NULL;
+cl_platform_id platform_id = NULL;
+cl_uint ret_num_devices;
+cl_uint ret_num_platforms;
+cl_int ret;
+```
+
+## Configurando uma fila (Queue) OpenCL
+
+Para enviar nossas tarefas para serem agendadas e executadas no dispositivo de destino, precisamos usar uma fila (Queue) OpenCL associada a um dispositivo. Primeiro pegamos o primeiro dispositivo da primeira plataforma disponível:
+
+```
+/* Get Platform and Device Info */
+ret = clGetPlatformIDs(1, &platform_id, &ret_num_platforms);
+ret = clGetDeviceIDs(platform_id, CL_DEVICE_TYPE_DEFAULT, 1, &device_id, &ret_num_devices);
+```
+
+Depois criamos um contexto de execução e uma fila associada e este contexto:
+```
+/* Create OpenCL context */
+context = clCreateContext(NULL, 1, &device_id, NULL, NULL, &ret);
+
+/* Create Command Queue */
+command_queue = clCreateCommandQueue(context, device_id, 0, &ret);
+```
+É possível criar contextos com vários dispositivos, mas cada fila está associada e um único dispositivo. 
 
 ## Configurar armazenamento do dispositivo
 
-Na maioria dos sistemas, o _host_ e o dispositivo não compartilham memória física. Por exemplo, a CPU pode usar RAM e a GPU pode usar sua própria VRAM interna. O SYCL precisa saber quais dados serão compartilhados entre o _host_ e os dispositivos.
+Na maioria dos sistemas, o _host_ e o dispositivo não compartilham memória física. Por exemplo, a CPU pode usar RAM e a GPU pode usar sua própria VRAM interna. O OpenCL precisa saber quais dados serão compartilhados entre o _host_ e os dispositivos.
 
-Para esse fim, existem _buffers_ SYCL. A classe `buffer<T, dims>` é genérica sobre o tipo de elemento e o número de dimensões, que podem ser uma, duas ou três. Quando passado um ponteiro bruto, como neste caso, o construtor `buffer(T* ptr, range_size)` assume a propriedade da memória pela qual foi passado. Isso significa que absolutamente não podemos usar essa memória enquanto o _buffer_ existe, e é por isso que começamos um escopo C++ (usando `{...}` para delimitá-lo). No final de seu escopo, os _buffers_ serão destruídos e a memória retornada ao usuário. O argumento `range_size` é um objeto de intervalo <dims>, que precisa ter o mesmo número de dimensões que o _buffer_ e é inicializado com o número de elementos em cada dimensão. Aqui, temos uma dimensão com um elemento.
+Para esse fim, existem _buffers_ OpenCL. A função a seguir cria um _buffer_ que pode ser lido e escrito (`CL_MEM_READ_WRITE`). 
 
-Os buffers não estão associados a uma fila ou contexto específico, portanto, eles são capazes de manipular dados de forma transparente entre vários dispositivos. Eles também não exigem informações de leitura/gravação, pois isso é especificado por operação.
-
-```
-sycl::buffer<sycl::float4, 1> a_sycl(&a, sycl::range<1>(1));
-sycl::buffer<sycl::float4, 1> b_sycl(&b, sycl::range<1>(1));
-sycl::buffer<sycl::float4, 1> c_sycl(&c, sycl::range<1>(1));
+```c
+/* Create Memory Buffer */
+memobj = clCreateBuffer(context, CL_MEM_READ_WRITE,MEM_SIZE * sizeof(char), NULL, &ret);
 ```
 
-## Executando o _kernel_
+## Compilando o _kernel_
 
-### Criando um grupo de comandos
+Os próximos passos são criar (`clCreateProgramWithSource`) e compilar (`clBuildProgram`) um programa que resultará em uma bibliteca dinâmica para o dispositivo alvo. Nosso único _kernel_ está armazenado em um arquivo externo (`hello.cl`), mas ele poderia conter mais de um, então precisamos indicar o seu nome `hello` como argumento na função `clCreateKernel`:
 
-Tudo consiste tecnicamente em uma única chamada de função para `queue::submit`. `submit` aceita um parâmetro de objeto de função, que encapsula um grupo de comandos. Para esse propósito, o objeto de função aceita um manipulador de grupo de comandos `cgh` construído pelo _runtime_ SYCL e entregue a nós como argumento. Todas as operações usando um determinado manipulador de grupo de comandos fazem parte do mesmo grupo de comandos.
+```c
+/* Create Kernel Program from the source */
+program = clCreateProgramWithSource(context, 1, (const char **)&source_str,
+(const size_t *)&source_size, &ret);
 
-`myQueue.submit([&](cl::sycl::handler &cgh)`
+/* Build Kernel Program */
+ret = clBuildProgram(program, 1, &device_id, NULL, NULL, NULL);
 
-Um grupo de comandos é uma maneira de encapsular uma operação do lado do dispositivo e todas as suas dependências de dados em um único objeto, agrupando todos os comandos relacionados (chamadas de função). Efetivamente, o que isso alcança é impedir condições de corrida de dados, vazamento de recursos e outros problemas, permitindo que o _runtime_ SYCL conheça os pré-requisitos para executar corretamente o código do lado do dispositivo.
-
-### Acessadores de dados (_Data Accessors_)
-
-Em nosso grupo de comandos, primeiro configuramos os acessadores. Em geral, esses objetos definem as entradas e saídas de uma operação do lado do dispositivo. Os acessadores também fornecem acesso a várias formas de memória. Nesse caso, eles nos permitem acessar a memória pertencente aos _buffers_ criados anteriormente. Passamos a propriedade de nossos dados para o _buffer_, para que não possamos mais usar os objetos `float4`, e os acessadores são a única maneira de acessar dados em objetos de _buffer_.
-
-```
-auto a_acc = a_sycl.get_access<sycl::access::mode::read>(cgh);
-auto b_acc = b_sycl.get_access<sycl::access::mode::read>(cgh);
-auto c_acc = c_sycl.get_access<sycl::access::mode::discard_write>(cgh);
+/* Create OpenCL Kernel */
+kernel = clCreateKernel(program, "hello", &ret);
 ```
 
-O método `buffer::get_access(handler&)` usa um argumento do modo de acesso. Usamos `access::mode::read` para os argumentos e `access::mode::discard_write` para o resultado. `discard_write` pode ser usado sempre que escrevemos em todo o _buffer_ e não nos importamos com o conteúdo anterior. Como ele será totalmente sobrescrito, podemos descartar o que havia antes.
+## Executando o _kernel_ 
 
-O segundo parâmetro é o tipo de memória da qual queremos acessar os dados. Veremos os tipos de memória disponíveis na seção sobre acessos à memória. Por enquanto, usamos o valor padrão.
+Agora basta atribuir o argumento que será usado no _kernel_ e enfileirar sua execução na fila do dispositivo:
 
-### Definindo uma função do _kernel_
+```c
+/* Set OpenCL Kernel Parameters */
+ret = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void *)&memobj);
 
-No SYCL, existem várias maneiras de definir uma função do _kernel_ que será executada em um dispositivo, dependendo do tipo de paralelismo desejado e dos diferentes recursos necessários. A mais simples delas é a função `cl::sycl::handler::single_task`, que utiliza um único parâmetro, sendo um objeto de função C++ e executa esse objeto de função exatamente uma vez no dispositivo. O objeto da função C++ não aceita nenhum parâmetro, no entanto, é importante observar que, se o objeto da função for um _lambda_, ele deverá capturar por valor e, se for uma estrutura ou classe, deverá definir todos os membros como membros por valor.
-
+/* Execute OpenCL Kernel */
+ret = clEnqueueTask(command_queue, kernel, 0, NULL,NULL);
 ```
-   cgh.single_task<class vector_addition>([=] () {
-      c_acc[0] = a_acc[0] + b_acc[0];
-   });
-});
+
+Nosso _kernel_ não recebe nenhum dado do _host_, mas quando for necessário, é preciso enviar os dados antes da execução usando `clEnqueueWriteBuffer`. 
+
+## Lendo e exibindo o resultado
+
+Após a execução, enfileiramos a transferência dos dados do dispositivo para _host_ com a função `clEnqueueReadBuffer` que tem como destino a `string` declarada no _host_ e a exibimos:
+
+```c
+/* Copy results from the memory buffer */
+ret = clEnqueueReadBuffer(command_queue, memobj, CL_TRUE, 0,
+MEM_SIZE * sizeof(char),string, 0, NULL, NULL);
+
+/* Display Result */
+puts(string);
 ```
 
 ## Limpando
 
-Um dos recursos do SYCL é o uso do C++ RAII (resource aquisition is initialisation: aquisição de recursos é inicialização), o que significa que não há limpeza explícita e tudo é feito por meio dos destruidores de objetos SYCL.
+Como estamos usando a versão C da API, precisamos desalocar os recursos:
+
+```c
+/* Finalization */
+ret = clFlush(command_queue);
+ret = clFinish(command_queue);
+ret = clReleaseKernel(kernel);
+ret = clReleaseProgram(program);
+ret = clReleaseMemObject(memobj);
+ret = clReleaseCommandQueue(command_queue);
+ret = clReleaseContext(context);
+
+free(source_str);
 ```
-{
-   ...
-}
-```
+
+Isso pode não ser necessário em linguagens de programação mais modernas como C++, Python e Java. 
 
 # Vamos executar!
 
