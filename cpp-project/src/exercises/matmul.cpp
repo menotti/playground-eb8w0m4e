@@ -116,7 +116,7 @@ int main(int argc, char *argv[])
 //--------------------------------------------------------------------------------
 
         // Create the compute program from the source buffer
-        cl::Program program(context, util::loadProgram("../C_elem.cl"), true);
+        cl::Program program(context, util::loadProgram("kernels/C_elem.cl"), true);
 
         // Create the compute kernel from the program
         cl::make_kernel<int, cl::Buffer, cl::Buffer, cl::Buffer> naive_mmul(program, "mmul");
@@ -153,7 +153,7 @@ int main(int argc, char *argv[])
 //--------------------------------------------------------------------------------
 
         // Create the compute program from the source buffer
-        program = cl::Program(context, util::loadProgram("../C_row.cl"), true);
+        program = cl::Program(context, util::loadProgram("kernels/C_row.cl"), true);
 
         // Create the compute kernel from the program
         cl::make_kernel<int, cl::Buffer, cl::Buffer, cl::Buffer> crow_mmul(program, "mmul");
@@ -186,7 +186,7 @@ int main(int argc, char *argv[])
 //--------------------------------------------------------------------------------
 
         // Create the compute program from the source buffer
-        program = cl::Program(context, util::loadProgram("../C_row_priv.cl"), true);
+        program = cl::Program(context, util::loadProgram("kernels/C_row_priv.cl"), true);
 
         // Create the compute kernel from the program
         cl::make_kernel<int, cl::Buffer, cl::Buffer, cl::Buffer> arowpriv_mmul(program, "mmul");
@@ -220,7 +220,7 @@ int main(int argc, char *argv[])
 //--------------------------------------------------------------------------------
 
         // Create the compute program from the source buffer
-        program = cl::Program(context, util::loadProgram("../C_row_priv_bloc.cl"), true);
+        program = cl::Program(context, util::loadProgram("kernels/C_row_priv_bloc.cl"), true);
 
         // Create the compute kernel from the program
         cl::make_kernel<int, cl::Buffer, cl::Buffer, cl::Buffer, cl::LocalSpaceArg> browloc_mmul(program, "mmul");
@@ -257,7 +257,7 @@ int main(int argc, char *argv[])
 //--------------------------------------------------------------------------------
 
         // Create the compute program from the source buffer
-        program = cl::Program(context, util::loadProgram("../C_block_form.cl"), true);
+        program = cl::Program(context, util::loadProgram("kernels/C_block_form.cl"), true);
 
         // Create the compute kernel from the program
         cl::make_kernel<int, cl::Buffer, cl::Buffer, cl::Buffer, cl::LocalSpaceArg, cl::LocalSpaceArg> block_mmul(program, "mmul");
