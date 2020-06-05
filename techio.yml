@@ -16,7 +16,7 @@ plan:
   - title: Programação de Kernel OpenCL - A API single_task
     statement: markdowns/vector_ops_3.md
   - title: Questionário
-    statement: markdowns/summary.md
+    statement: markdowns/sandbox.md
   - title: Tratamento de erros
     statement: markdowns/error_handling.md
 - title: Memória OpenCL e Sincronização
