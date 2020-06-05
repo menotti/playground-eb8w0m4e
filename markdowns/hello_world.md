@@ -90,4 +90,4 @@ Um dos recursos do SYCL é o uso do C++ RAII (resource aquisition is initialisat
 
 # Vamos executar!
 
-@[Olá mundo em SYCL]({"stubs": ["src/exercises/hello_world.cpp"],"command": "sh /project/target/run.sh hello_world", "layout": "aside"})
+@[Hello World - OpenCL]({"stubs": ["src/exercises/hello_world.cpp", "src/exercises/kernels/hello.cl"],"command": "sh /project/target/run.sh hello_world", "layout": "aside"})

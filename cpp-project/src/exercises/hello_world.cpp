@@ -1,82 +1,91 @@
-#include <iostream>
-#include <CL/cl.hpp>
+#include <stdio.h>
+#include <stdlib.h>
  
-int main(){
-    //get all platforms (drivers)
-    std::vector<cl::Platform> all_platforms;
-    cl::Platform::get(&all_platforms);
-    if(all_platforms.size()==0){
-        std::cout<<" No platforms found. Check OpenCL installation!\n";
-        exit(1);
-    }
-    cl::Platform default_platform=all_platforms[0];
-    std::cout << "Using platform: "<<default_platform.getInfo<CL_PLATFORM_NAME>()<<"\n";
+#ifdef __APPLE__
+#include <OpenCL/opencl.h>
+#else
+#include <CL/cl.h>
+#endif
  
-    //get default device of the default platform
-    std::vector<cl::Device> all_devices;
-    default_platform.getDevices(CL_DEVICE_TYPE_ALL, &all_devices);
-    if(all_devices.size()==0){
-        std::cout<<" No devices found. Check OpenCL installation!\n";
-        exit(1);
-    }
-    cl::Device default_device=all_devices[0];
-    std::cout<< "Using device: "<<default_device.getInfo<CL_DEVICE_NAME>()<<"\n";
+#define MEM_SIZE (128)
+#define MAX_SOURCE_SIZE (0x100000)
  
+int main()
+{
+cl_device_id device_id = NULL;
+cl_context context = NULL;
+cl_command_queue command_queue = NULL;
+cl_mem memobj = NULL;
+cl_program program = NULL;
+cl_kernel kernel = NULL;
+cl_platform_id platform_id = NULL;
+cl_uint ret_num_devices;
+cl_uint ret_num_platforms;
+cl_int ret;
  
-    cl::Context context({default_device});
+char string[MEM_SIZE];
  
-    cl::Program::Sources sources;
+FILE *fp;
+char fileName[] = "./kernels/hello.cl";
+char *source_str;
+size_t source_size;
  
-    // kernel calculates for each element C=A+B
-    std::string kernel_code=
-            "   void kernel simple_add(global const int* A, global const int* B, global int* C){       "
-            "       C[get_global_id(0)]=A[get_global_id(0)]+B[get_global_id(0)];                 "
-            "   }                                                                               ";
-    sources.push_back({kernel_code.c_str(),kernel_code.length()});
+/* Load the source code containing the kernel*/
+fp = fopen(fileName, "r");
+if (!fp) {
+fprintf(stderr, "Failed to load kernel.\n");
+exit(1);
+}
+source_str = (char*)malloc(MAX_SOURCE_SIZE);
+source_size = fread(source_str, 1, MAX_SOURCE_SIZE, fp);
+fclose(fp);
  
-    cl::Program program(context,sources);
-    if(program.build({default_device})!=CL_SUCCESS){
-        std::cout<<" Error building: "<<program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(default_device)<<"\n";
-        exit(1);
-    }
+/* Get Platform and Device Info */
+ret = clGetPlatformIDs(1, &platform_id, &ret_num_platforms);
+ret = clGetDeviceIDs(platform_id, CL_DEVICE_TYPE_DEFAULT, 1, &device_id, &ret_num_devices);
  
+/* Create OpenCL context */
+context = clCreateContext(NULL, 1, &device_id, NULL, NULL, &ret);
  
-    // create buffers on the device
-    cl::Buffer buffer_A(context,CL_MEM_READ_WRITE,sizeof(int)*10);
-    cl::Buffer buffer_B(context,CL_MEM_READ_WRITE,sizeof(int)*10);
-    cl::Buffer buffer_C(context,CL_MEM_READ_WRITE,sizeof(int)*10);
+/* Create Command Queue */
+command_queue = clCreateCommandQueue(context, device_id, 0, &ret);
  
-    int A[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
-    int B[] = {0, 1, 2, 0, 1, 2, 0, 1, 2, 0};
+/* Create Memory Buffer */
+memobj = clCreateBuffer(context, CL_MEM_READ_WRITE,MEM_SIZE * sizeof(char), NULL, &ret);
  
-    //create queue to which we will push commands for the device.
-    cl::CommandQueue queue(context,default_device);
+/* Create Kernel Program from the source */
+program = clCreateProgramWithSource(context, 1, (const char **)&source_str,
+(const size_t *)&source_size, &ret);
  
-    //write arrays A and B to the device
-    queue.enqueueWriteBuffer(buffer_A,CL_TRUE,0,sizeof(int)*10,A);
-    queue.enqueueWriteBuffer(buffer_B,CL_TRUE,0,sizeof(int)*10,B);
+/* Build Kernel Program */
+ret = clBuildProgram(program, 1, &device_id, NULL, NULL, NULL);
  
+/* Create OpenCL Kernel */
+kernel = clCreateKernel(program, "hello", &ret);
  
-    //run the kernel
-    cl::KernelFunctor simple_add(cl::Kernel(program,"simple_add"),queue,cl::NullRange,cl::NDRange(10),cl::NullRange);
-    simple_add(buffer_A,buffer_B,buffer_C);
+/* Set OpenCL Kernel Parameters */
+ret = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void *)&memobj);
  
-    //alternative way to run the kernel
-    /*cl::Kernel kernel_add=cl::Kernel(program,"simple_add");
-    kernel_add.setArg(0,buffer_A);
-    kernel_add.setArg(1,buffer_B);
-    kernel_add.setArg(2,buffer_C);
-    queue.enqueueNDRangeKernel(kernel_add,cl::NullRange,cl::NDRange(10),cl::NullRange);
-    queue.finish();*/
+/* Execute OpenCL Kernel */
+ret = clEnqueueTask(command_queue, kernel, 0, NULL,NULL);
  
-    int C[10];
-    //read result C from the device to array C
-    queue.enqueueReadBuffer(buffer_C,CL_TRUE,0,sizeof(int)*10,C);
+/* Copy results from the memory buffer */
+ret = clEnqueueReadBuffer(command_queue, memobj, CL_TRUE, 0,
+MEM_SIZE * sizeof(char),string, 0, NULL, NULL);
  
-    std::cout<<" result: \n";
-    for(int i=0;i<10;i++){
-        std::cout<<C[i]<<" ";
-    }
+/* Display Result */
+puts(string);
  
-    return 0;
+/* Finalization */
+ret = clFlush(command_queue);
+ret = clFinish(command_queue);
+ret = clReleaseKernel(kernel);
+ret = clReleaseProgram(program);
+ret = clReleaseMemObject(memobj);
+ret = clReleaseCommandQueue(command_queue);
+ret = clReleaseContext(context);
+ 
+free(source_str);
+ 
+return 0;
 }
