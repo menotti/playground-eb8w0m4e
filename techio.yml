@@ -1,5 +1,4 @@
 title: Introdução ao OpenCL
-cover: /images/cover.png
 plan:
   - title: Introdução ao OpenCL
     statement: markdowns/1intro.md
