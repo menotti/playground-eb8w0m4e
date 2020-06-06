@@ -98,9 +98,10 @@ int main(int argc, char *argv[])
 //--------------------------------------------------------------------------------
 
         // Create the compute program from the source buffer
-        program = cl::Program(context, util::loadProgram("kernels/C_row.cl"), true);
-//         program = cl::Program(context, util::loadProgram("kernels/C_row_priv.cl"), true);
-//         program = cl::Program(context, util::loadProgram("kernels/C_row_priv_bloc.cl"), true);
+        // Create the compute program from the source buffer
+        cl::Program program(context, util::loadProgram("kernels/C_row.cl"), true);
+//         cl::Program program(context, util::loadProgram("kernels/C_row_priv.cl"), true);
+//         cl::Program program(context, util::loadProgram("kernels/C_row_priv_bloc.cl"), true);
 
         // Create the compute kernel from the program
         cl::make_kernel<int, cl::Buffer, cl::Buffer, cl::Buffer> crow_mmul(program, "mmul");

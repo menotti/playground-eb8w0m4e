@@ -99,7 +99,7 @@ int main(int argc, char *argv[])
 //--------------------------------------------------------------------------------
 
         // Create the compute program from the source buffer
-        program = cl::Program(context, util::loadProgram("kernels/C_block_form.cl"), true);
+        cl::Program program(context, util::loadProgram("kernels/C_block_form.cl"), true);
 
         // Create the compute kernel from the program
         cl::make_kernel<int, cl::Buffer, cl::Buffer, cl::Buffer, cl::LocalSpaceArg, cl::LocalSpaceArg> block_mmul(program, "mmul");
