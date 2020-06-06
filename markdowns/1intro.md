@@ -1,4 +1,4 @@
-# Introdução ao OpenCL[^1]
+# Introdução ao OpenCL<sup id="a1">[1](#f1)</sup>
 
 ## O que é OpenCL?
 
@@ -8,4 +8,4 @@ Este tutorial tem como objetivo ensinar os fundamentos do OpenCL por meio da exp
 
 Usaremos o uma implementação compatível com OpenCL 1.2 para compilar e executar os exemplos.
 
-[^1]Este tutorial faz parte de um [Curso de Programação Paralela](https://github.com/menotti/pp) e traz apenas exemplos de uso. Acesse o material completo para mais detalhes. 
+<b id="f1">1</b> Este tutorial faz parte de um [Curso de Programação Paralela](https://github.com/menotti/pp) e traz apenas exemplos de uso. Acesse o material completo para mais detalhes. [↩](#a1)
