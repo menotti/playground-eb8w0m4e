@@ -1,45 +1,20 @@
 title: Introdução ao OpenCL
+cover: /images/cover.png
 plan:
-- title: Introdução
-  description: Esta seção apresenta a computação heterogênea.
-  plan:
   - title: Introdução ao OpenCL
-    statement: markdowns/intro.md
-  - title: Começando
-    statement: markdowns/configuration.md
+    statement: markdowns/1intro.md
+  - title: Configuração do OpenCL
+    statement: markdowns/2config.md
   - title: Olá mundo
-    statement: markdowns/hello_world.md
-  - title: Configuração do host e fila (Queue) OpenCL 
-    statement: markdowns/vector_ops_1.md
-  - title: Memória do dispositivo usando buffers e acessadores
-    statement: markdowns/vector_ops_2.md
-  - title: Programação de Kernel OpenCL - A API single_task
-    statement: markdowns/vector_ops_3.md
-  - title: Questionário
-    statement: markdowns/sandbox.md
-  - title: Tratamento de erros
-    statement: markdowns/error_handling.md
-- title: Memória OpenCL e Sincronização
-  description: Esta seção apresenta memória e sincronização no OpenCL
-  plan:
-  - title: Memória e Sincronização
-    statement: markdowns/sycl_memory_1.md
-  - title: Lendo informações do hardware
-    statement: markdowns/sycl_memory_2.md
-  - title: O loop de redução
-    statement: markdowns/sycl_memory_3.md
-  - title: Usando memória local, barreiras e escrevendo o resultado
-    statement: markdowns/sycl_memory_4.md
-- title: Depurando aplicações OpenCL
-  description: Esta seção introduz a depuração de aplicações OpenCL
-  plan:
-  - title: Depurando aplicações OpenCL 
-    statement: markdowns/sycl_debugging.md
-- title: Saiba mais sobre o OpenCL
-  description: Saiba mais sobre o desenvolvimento com OpenCL
-  plan:
+    statement: markdowns/3ola_mundo.md
+  - title: Um exemplo completo
+    statement: markdowns/4matmul2d.md
+  - title: Usando memória local 
+    statement: markdowns/5matmul1d.md
+  - title: Blocagem de _loops_ 
+    statement: markdowns/6matmul2db.md
   - title: Mais maneiras de aprender sobre o OpenCL
-    statement: markdowns/sycl_learn_more.md
+    statement: markdowns/7final.md
 projects:
   cpp:
     root: /cpp-project
