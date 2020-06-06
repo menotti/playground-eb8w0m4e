@@ -54,7 +54,6 @@ int main(int argc, char *argv[])
 
     try
     {   
- 
         cl_uint deviceIndex = 0;
         parseArguments(argc, argv, &deviceIndex);
 
@@ -87,8 +86,8 @@ int main(int argc, char *argv[])
         //  Reset A, B and C matrices (just to play it safe)
         initmat(N, h_A, h_B, h_C);
 
-        d_a = cl::Buffer(context, h_A.begin(), h_A.end(), true);
-        d_b = cl::Buffer(context, h_B.begin(), h_B.end(), true);
+        d_a = cl::Buffer(context, h_A.begin(), h_A.end(), true);      
+        d_b = cl::Buffer(context, h_B.begin(), h_B.end(), true);       
         d_c = cl::Buffer(context, CL_MEM_WRITE_ONLY, sizeof(float) * size);
 
 //--------------------------------------------------------------------------------
@@ -97,7 +96,6 @@ int main(int argc, char *argv[])
 // OpenCL matrix multiplication ... C row per work item, A row pivate, B col local
 //--------------------------------------------------------------------------------
 
-        // Create the compute program from the source buffer
         // Create the compute program from the source buffer
         cl::Program program(context, util::loadProgram("kernels/C_row.cl"), true);
 //         cl::Program program(context, util::loadProgram("kernels/C_row_priv.cl"), true);
@@ -123,16 +121,13 @@ int main(int argc, char *argv[])
 //            cl::NDRange local(ORDER / 16);
 //            cl::LocalSpaceArg localmem = cl::Local(sizeof(float) * N);
 
-            crow_mmul(cl::EnqueueArgs(queue, global),
-                    N, d_a, d_b, d_c);
-//             arowpriv_mmul(cl::EnqueueArgs(queue, global, local),
-//                     N, d_a, d_b, d_c);
-//             browloc_mmul(cl::EnqueueArgs(queue, global, local),
-//                     N, d_a, d_b, d_c, localmem);
+            crow_mmul(cl::EnqueueArgs(queue, global), N, d_a, d_b, d_c);
+//            arowpriv_mmul(cl::EnqueueArgs(queue, global, local), N, d_a, d_b, d_c);
+//            browloc_mmul(cl::EnqueueArgs(queue, global, local), N, d_a, d_b, d_c, localmem);
 
             queue.finish();
 
-            run_time  = static_cast<double>(timer.getTimeMilliseconds()) / 1000.0 - start_time;
+            run_time = static_cast<double>(timer.getTimeMilliseconds()) / 1000.0 - start_time;
 
             cl::copy(queue, d_c, h_C.begin(), h_C.end());
 

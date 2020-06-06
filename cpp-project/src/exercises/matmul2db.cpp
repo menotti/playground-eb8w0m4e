@@ -34,7 +34,6 @@ int main(int argc, char *argv[])
     int N;   // A[N][N], B[N][N], C[N][N]
     int size;      // Number of elements in each matrix
 
-
     double start_time;      // Starting time
     double run_time;        // Timing data
     util::Timer timer;      // timing
@@ -55,7 +54,6 @@ int main(int argc, char *argv[])
 
     try
     {   
- 
         cl_uint deviceIndex = 0;
         parseArguments(argc, argv, &deviceIndex);
 
@@ -89,9 +87,7 @@ int main(int argc, char *argv[])
         initmat(N, h_A, h_B, h_C);
 
         d_a = cl::Buffer(context, h_A.begin(), h_A.end(), true);
-
         d_b = cl::Buffer(context, h_B.begin(), h_B.end(), true);
-
         d_c = cl::Buffer(context, CL_MEM_WRITE_ONLY, sizeof(float) * size);
 
 //--------------------------------------------------------------------------------
@@ -104,7 +100,12 @@ int main(int argc, char *argv[])
         // Create the compute kernel from the program
         cl::make_kernel<int, cl::Buffer, cl::Buffer, cl::Buffer, cl::LocalSpaceArg, cl::LocalSpaceArg> block_mmul(program, "mmul");
 
-        printf("\n===== Parallel matrix mult (blocked), order %d on device ======\n",ORDER);
+        // Work-group computes a block of C.  This size is also set
+        // in a #define inside the kernel function.  Note this blocksize
+        // must evenly divide the matrix order
+        int blocksize = 16;
+
+        printf("\n===== Parallel matrix mult (blocked, size=%d), order %d on device ======\n", blocksize, ORDER);
 
         // Do the multiplication COUNT times
         for (int i = 0; i < COUNT; i++)
@@ -112,11 +113,6 @@ int main(int argc, char *argv[])
             zero_mat(N, h_C);
 
             start_time = static_cast<double>(timer.getTimeMilliseconds()) / 1000.0;
-
-            // Work-group computes a block of C.  This size is also set
-            // in a #define inside the kernel function.  Note this blocksize
-            // must evenly divide the matrix order
-            int blocksize = 16;
 
             cl::LocalSpaceArg A_block = cl::Local(sizeof(float) * blocksize*blocksize);
             cl::LocalSpaceArg B_block = cl::Local(sizeof(float) * blocksize*blocksize);
@@ -142,6 +138,7 @@ int main(int argc, char *argv[])
             results(N, h_C, run_time);
 
         } // end for loop
+        
     } catch (cl::Error err)
     {
         std::cout << "Exception\n";

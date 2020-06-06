@@ -34,7 +34,6 @@ int main(int argc, char *argv[])
     int N;   // A[N][N], B[N][N], C[N][N]
     int size;      // Number of elements in each matrix
 
-
     double start_time;      // Starting time
     double run_time;        // Timing data
     util::Timer timer;      // timing
@@ -55,7 +54,6 @@ int main(int argc, char *argv[])
 
     try
     {   
- 
         cl_uint deviceIndex = 0;
         parseArguments(argc, argv, &deviceIndex);
 
@@ -89,9 +87,7 @@ int main(int argc, char *argv[])
         initmat(N, h_A, h_B, h_C);
 
         d_a = cl::Buffer(context, h_A.begin(), h_A.end(), true);
-
         d_b = cl::Buffer(context, h_B.begin(), h_B.end(), true);
-
         d_c = cl::Buffer(context, CL_MEM_WRITE_ONLY, sizeof(float) * size);
 
 //--------------------------------------------------------------------------------
@@ -123,7 +119,7 @@ int main(int argc, char *argv[])
 
             queue.finish();
 
-            run_time  = static_cast<double>(timer.getTimeMilliseconds()) / 1000.0 - start_time;
+            run_time = static_cast<double>(timer.getTimeMilliseconds()) / 1000.0 - start_time;
 
             cl::copy(queue, d_c, h_C.begin(), h_C.end());
 

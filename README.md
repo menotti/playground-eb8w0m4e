@@ -1,5 +1,10 @@
-# SYCL tech.io Tutorials repository
+# Introdução ao OpenCL - Tech.io playground
 
-This repository contains the materials used for the SYCL tutorials hosted on tech.io.
+Este repositório contem o material usado para o tutorial OpenCL hospedado no site Tech.io:
 
-If you would like to contribute to the tutorial please create a merge request with your changes.
+https://tech.io/playgrounds/54224/introducao-ao-opencl/
+
+Traduzido e adaptado do original em inglês disponível em:
+
+https://tech.io/playgrounds/48226/introduction-to-sycl/
+
