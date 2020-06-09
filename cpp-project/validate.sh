@@ -1,10 +1,13 @@
 #!/bin/sh
 
-echo cpuinfo output:
-cpuinfo
+echo lscpu output:
+lscpu
 
-echo meminfo output:
-meminfo 
+echo dmidecode output:
+dmidecode --type memory 
+
+echo free output:
+free -h 
 
 echo clinfo output:
 clinfo
