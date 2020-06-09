@@ -3,11 +3,8 @@
 echo lscpu output:
 lscpu
 
-echo dmidecode output:
-dmidecode --type memory 
-
-echo free output:
+echo -e '\n\nfree output:'
 free -h 
 
-echo clinfo output:
+echo -e '\n\nclinfo output:'
 clinfo
